@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FitnessTracker · Body Metrics</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #E9E7E2;
+    background:
+      radial-gradient(circle at 50% 0%, #F5F3EE 0%, #E2DFD7 60%, #D8D5CC 100%);
+    font-family: 'Space Grotesk', -apple-system, system-ui, sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  body.dark-stage {
+    background:
+      radial-gradient(circle at 50% 0%, #1A1A1A 0%, #0E0E0E 60%, #050505 100%);
+  }
+  #stage {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #stage-inner {
+    transform-origin: center center;
+  }
+
+  /* ── Stage chrome ── */
+  .stage-meta {
+    position: fixed; top: 22px; left: 22px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+    color: rgba(11,11,11,0.55); text-transform: uppercase;
+    pointer-events: none; z-index: 100;
+  }
+  body.dark-stage .stage-meta { color: rgba(255,255,255,0.55); }
+  .stage-meta .dot { display: inline-block; width: 8px; height: 8px; background: #D8FF3D; border-radius: 99px; margin-right: 8px; vertical-align: middle; }
+
+  /* ── Sheet animations ── */
+  @keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes sheetFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Scrollbar hide inside the device */
+  #stage-inner *::-webkit-scrollbar { width: 0; height: 0; }
+  #stage-inner * { scrollbar-width: none; }
+
+  button { font-family: inherit; }
+</style>
+</head>
+<body>
+
+<div class="stage-meta"><span class="dot"></span>FitnessTracker · iOS · Body Metrics</div>
+
+<div id="stage"><div id="stage-inner"><div id="root"></div></div></div>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Components -->
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="human-body.jsx"></script>
+<script type="text/babel" src="measurement-sheet.jsx"></script>
+<script type="text/babel" src="body-metrics.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "light"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const theme = t.theme;
+  const isDark = theme === 'dark';
+
+  // Sync body class for stage background
+  React.useEffect(() => {
+    document.body.classList.toggle('dark-stage', isDark);
+  }, [isDark]);
+
+  // Auto-scale the device to fit the viewport
+  React.useEffect(() => {
+    const fit = () => {
+      const inner = document.getElementById('stage-inner');
+      if (!inner) return;
+      const w = window.innerWidth, h = window.innerHeight;
+      const targetW = 402, targetH = 874;
+      const margin = 48;
+      const sx = (w - margin) / targetW;
+      const sy = (h - margin) / targetH;
+      const s = Math.min(1, Math.min(sx, sy));
+      inner.style.transform = `scale(${s})`;
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
+
+  return (
+    <>
+      <IOSDevice width={402} height={874} dark={isDark}>
+        <BodyMetricsScreen theme={theme} />
+      </IOSDevice>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection label="Appearance">
+          <TweakRadio
+            label="Theme"
+            value={theme}
+            options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]}
+            onChange={(v) => setTweak('theme', v)}
+          />
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body>
+</html>
